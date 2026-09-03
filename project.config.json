@@ -1,0 +1,7 @@
+{
+  "miniprogramRoot": "./",
+  "projectname": "supermarket-wireframe",
+  "description": "超市购物 App 低保真原生小程序",
+  "appid": "touristappid",
+  "setting": { "es6": true, "minified": false }
+}

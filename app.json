@@ -1,0 +1,10 @@
+{
+  "pages": ["pages/home/home", "pages/cart/cart"],
+  "window": {
+    "navigationBarTitleText": "惠民超市",
+    "navigationBarBackgroundColor": "#f4f4f1",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f4f4f1"
+  },
+  "style": "v2"
+}
