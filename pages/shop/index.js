@@ -1,0 +1,38 @@
+const catalog=require('../../utils/catalog');
+const {money,add,summary,filter}=require('../../utils/shop');
+const display=p=>({...p,priceText:money(p.price),oldText:money(p.old)});
+Page({
+ data:{tab:'首页',tabs:['首页','分类','购物车','我的'],navAssets:{'首页':'https://niuluda.oss-cn-beijing.aliyuncs.com/weixin/market/assets/home/icon-nav-home.png','分类':'https://niuluda.oss-cn-beijing.aliyuncs.com/weixin/market/assets/home/icon-nav-category.png','购物车':'https://niuluda.oss-cn-beijing.aliyuncs.com/weixin/market/assets/home/icon-nav-cart.png','我的':'https://niuluda.oss-cn-beijing.aliyuncs.com/weixin/market/assets/home/icon-nav-profile.png'},categories:['全部','水果','蔬菜','肉禽','海鲜'],category:'全部',query:'',submitted:'',promo:false,status:'ready',products:[],cart:[],cartRows:[],cartCount:0,total:'0.00',subtotal:'0.00',discount:'0.00',selectedCount:0,allSelected:false,coupon:false,panel:'',detail:null,detailQty:1,store:'欢乐家园3期 · 北门店',storeDraft:'欢乐家园3期 · 北门店',stores:['欢乐家园3期 · 北门店','欢乐家园3期 · 南门店','欢乐家园2期 · 东门店'],editing:false,orders:[],recommendations:[],recommendOffset:0},
+ onLoad(){this.refresh();this.loadProducts();},
+ onUnload(){clearTimeout(this.timer);},
+ refresh(){const s=summary(this.data.cart,this.data.coupon);this.setData({cartRows:this.data.cart.map(i=>({...display(catalog.find(p=>p.id===i.id)),...i})),cartCount:this.data.cart.reduce((n,i)=>n+i.qty,0),total:money(s.total),subtotal:money(s.subtotal),discount:money(s.discount),selectedCount:s.count,allSelected:this.data.cart.length>0&&this.data.cart.every(i=>i.selected),recommendations:catalog.slice(this.data.recommendOffset,this.data.recommendOffset+2).map(display)});},
+ loadProducts(){clearTimeout(this.timer);this.setData({status:'loading'});this.timer=setTimeout(()=>this.setData({status:'ready',products:filter(this.data.category,this.data.submitted,this.data.promo).map(display)}),300);},
+ switchTab(e){const tab=e.currentTarget.dataset.tab;this.setData({tab,panel:'',editing:false});if(tab==='首页'||tab==='分类')this.loadProducts();},
+ inputSearch(e){this.setData({query:e.detail.value});},
+ search(){this.setData({submitted:this.data.query.trim(),promo:false});this.loadProducts();},
+ clearSearch(){this.setData({query:'',submitted:'',category:'全部',promo:false});this.loadProducts();},
+ chooseCategory(e){this.setData({category:e.currentTarget.dataset.category});this.loadProducts();},
+ viewAll(){this.setData({tab:'分类',category:'全部',query:'',submitted:'',promo:false});this.loadProducts();},
+ promotion(){this.setData({promo:true,category:'全部',query:'',submitted:''});this.loadProducts();},
+ openPanel(e){this.setData({panel:e.currentTarget.dataset.panel,storeDraft:this.data.store});},
+ closePanel(){this.setData({panel:''});},
+ noop(){},
+ chooseStore(e){this.setData({storeDraft:e.currentTarget.dataset.store});},
+ saveStore(){this.setData({store:this.data.storeDraft,panel:''});wx.showToast({title:'自提门店已更新',icon:'none'});},
+ openDetail(e){this.setData({panel:'detail',detail:display(catalog.find(p=>p.id===e.currentTarget.dataset.id)),detailQty:1});},
+ detailQuantity(e){this.setData({detailQty:Math.max(1,Math.min(99,this.data.detailQty+Number(e.currentTarget.dataset.delta)))});},
+ addProduct(e){this.setData({cart:add(this.data.cart,e.currentTarget.dataset.id)});this.refresh();wx.showToast({title:'已加入购物车',icon:'success'});},
+ addDetail(){this.setData({cart:add(this.data.cart,this.data.detail.id,this.data.detailQty),panel:''});this.refresh();wx.showToast({title:'已加入购物车',icon:'success'});},
+ toggleItem(e){this.setData({cart:this.data.cart.map(i=>i.id===e.currentTarget.dataset.id?{...i,selected:!i.selected}:i)});this.refresh();},
+ toggleAll(){const selected=!this.data.allSelected;this.setData({cart:this.data.cart.map(i=>({...i,selected}))});this.refresh();},
+ quantity(e){const {id,delta}=e.currentTarget.dataset;this.setData({cart:this.data.cart.map(i=>i.id===id?{...i,qty:Math.max(1,Math.min(99,i.qty+Number(delta)))}:i)});this.refresh();},
+ edit(){this.setData({editing:!this.data.editing});},
+ remove(e){const id=e.currentTarget.dataset.id;wx.showModal({title:'删除商品',content:'确认从购物车移除这件商品？',success:r=>{if(r.confirm){this.setData({cart:this.data.cart.filter(i=>i.id!==id)});this.refresh();}}});},
+ coupon(){if(summary(this.data.cart,false).subtotal<3900&&!this.data.coupon){wx.showToast({title:'勾选商品满39元可用',icon:'none'});return;}this.setData({coupon:!this.data.coupon});this.refresh();},
+ checkout(){if(!this.data.selectedCount)return;this.setData({panel:'checkout'});},
+ submitOrder(){if(!this.data.selectedCount||this.data.status==='submitting')return;this.setData({status:'submitting'});this.timer=setTimeout(()=>{const order={id:Date.now().toString(),total:this.data.total,count:this.data.selectedCount,store:this.data.store};this.setData({orders:[order,...this.data.orders],cart:this.data.cart.filter(i=>!i.selected),coupon:false,status:'ready',panel:'success'});this.refresh();},500);},
+ rotate(){this.setData({recommendOffset:(this.data.recommendOffset+2)%catalog.length});this.refresh();},
+ goHome(){this.setData({tab:'首页',panel:''});this.clearSearch();},
+ simulate(e){clearTimeout(this.timer);const state=e.currentTarget.dataset.state;this.setData({panel:'',tab:'首页',status:state==='error'?'error':'ready',products:state==='empty'?[]:this.data.products});if(state==='loading')this.loadProducts();},
+ showOrders(){this.setData({panel:'orders'});}
+});

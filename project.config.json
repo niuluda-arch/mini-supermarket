@@ -1,0 +1,1 @@
+{"appid":"touristappid","projectname":"supermarket-wireframe","compileType":"miniprogram","miniprogramRoot":"./","setting":{"es6":true,"postcss":true,"minified":false},"packOptions":{"ignore":[{"type":"folder","value":"tests"},{"type":"folder","value":"tmp"},{"type":"suffix","value":".pdf"}]}}

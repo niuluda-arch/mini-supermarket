@@ -1,0 +1,8 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {add,summary,filter}=require('../utils/shop');
+test('加购合并数量且不修改原购物车',()=>{const cart=add([],'apple');const next=add(cart,'apple',2);assert.equal(cart[0].qty,1);assert.equal(next.length,1);assert.equal(next[0].qty,3);});
+test('分类和关键词同时筛选',()=>{assert.equal(filter('水果','苹果',false)[0].id,'apple');assert.equal(filter('海鲜','苹果',false).length,0);});
+test('优惠只按勾选商品计算，满39元减10元',()=>{const cart=add(add([],'milk'),'apple');cart[1].selected=false;assert.deepEqual(summary(cart,true),{count:1,subtotal:4200,discount:1000,total:3200});cart[0].selected=false;cart[1].selected=true;assert.equal(summary(cart,true).discount,0);});
+test('商品数量最大99，未知商品不能加入',()=>{assert.equal(add([],'apple',120)[0].qty,99);assert.deepEqual(add([],'unknown'),[]);});
+test('页面完成加购、勾选、优惠与模拟结算流程',async()=>{let page;global.Page=p=>{page=p;};global.wx={showToast(){},showModal(){}};require('../pages/shop/index');page.data=structuredClone(page.data);page.setData=patch=>Object.assign(page.data,patch);page.refresh();page.addProduct({currentTarget:{dataset:{id:'milk'}}});page.coupon();assert.equal(page.data.total,'32.00');page.checkout();assert.equal(page.data.panel,'checkout');page.submitOrder();await new Promise(r=>setTimeout(r,550));assert.equal(page.data.orders.length,1);assert.equal(page.data.cartCount,0);assert.equal(page.data.panel,'success');page.onUnload();});
