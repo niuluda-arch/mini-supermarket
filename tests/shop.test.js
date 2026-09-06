@@ -1,6 +1,8 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {add,summary,filter}=require('../utils/shop');
+const fs=require('node:fs');
+test('首页仅渲染一组四张原位轮播',()=>{const view=fs.readFileSync(require.resolve('../pages/shop/index.wxml'),'utf8');const style=fs.readFileSync(require.resolve('../pages/shop/index.wxss'),'utf8');assert.equal((view.match(/<swiper-item>/g)||[]).length,4);assert.ok(view.indexOf('class="search row"')<view.indexOf('class="banner-swiper"'));assert.match(style,/\.banner-swiper\{position:static/);});
 test('加购合并数量且不修改原购物车',()=>{const cart=add([],'apple');const next=add(cart,'apple',2);assert.equal(cart[0].qty,1);assert.equal(next.length,1);assert.equal(next[0].qty,3);});
 test('分类和关键词同时筛选',()=>{assert.equal(filter('水果','苹果',false)[0].id,'apple');assert.equal(filter('海鲜','苹果',false).length,0);});
 test('优惠只按勾选商品计算，满39元减10元',()=>{const cart=add(add([],'milk'),'apple');cart[1].selected=false;assert.deepEqual(summary(cart,true),{count:1,subtotal:4200,discount:1000,total:3200});cart[0].selected=false;cart[1].selected=true;assert.equal(summary(cart,true).discount,0);});
